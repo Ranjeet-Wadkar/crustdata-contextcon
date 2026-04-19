@@ -1,0 +1,16 @@
+iteration1/
+node_modules/
+.next/
+__pycache__/
+*.pyc
+venv/
+.env
+*.pdf
+*.pptx
+.DS_Store
+
+# Resa specific
+resa/frontend/node_modules/
+resa/frontend/.next/
+resa/backend/venv/
+resa/backend/__pycache__/
