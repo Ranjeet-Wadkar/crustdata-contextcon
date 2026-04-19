@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import NeoButton from '@/components/NeoButton';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export default function Home() {
   const [text, setText] = useState('');
   const [activeStep, setActiveStep] = useState(0);
@@ -17,7 +19,7 @@ export default function Home() {
 
   const fetchLogs = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/logs');
+      const res = await fetch(`${API_BASE}/api/logs`);
       if (res.ok) {
         const data = await res.json();
         setLogs(data.logs || []);
@@ -38,11 +40,11 @@ export default function Home() {
   const startAnalysis = async () => {
     if (!text) return;
     setLoading(true);
-    await fetch('http://localhost:8000/api/reset', { method: 'POST' });
+    await fetch(`${API_BASE}/api/reset`, { method: 'POST' });
     
     // Step 1: Research
     setActiveStep(1);
-    const r1 = await fetch('http://localhost:8000/api/run/research', {
+    const r1 = await fetch(`${API_BASE}/api/run/research`, {
       method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text})
     });
     const d1 = await r1.json();
@@ -66,7 +68,7 @@ export default function Home() {
       topics: researchOverride.topics.split(',').map(t => t.trim()),
       product_recommendations: [{ product_name: "Refined Output", description: researchOverride.products, relevance: "High" }]
     };
-    const r2 = await fetch('http://localhost:8000/api/run/market', {
+    const r2 = await fetch(`${API_BASE}/api/run/market`, {
       method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(mPayload)
     });
     const d2 = await r2.json();
@@ -74,7 +76,7 @@ export default function Home() {
 
     // Run Feasibility
     setActiveStep(3);
-    const r3 = await fetch('http://localhost:8000/api/run/feasibility', { method: 'POST' });
+    const r3 = await fetch(`${API_BASE}/api/run/feasibility`, { method: 'POST' });
     const d3 = await r3.json();
     setResults(prev => [...prev.slice(0,2), d3]);
     
@@ -99,7 +101,7 @@ export default function Home() {
       budget: feasibilityOverride.budget,
       roadmap: feasibilityOverride.roadmap.split('\n').filter(l => l.trim())
     };
-    const r4 = await fetch('http://localhost:8000/api/run/stakeholder', {
+    const r4 = await fetch(`${API_BASE}/api/run/stakeholder`, {
       method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(fPayload)
     });
     const d4 = await r4.json();
@@ -107,7 +109,7 @@ export default function Home() {
 
     // Run Business Plan
     setActiveStep(5);
-    const r5 = await fetch('http://localhost:8000/api/run/business_plan', { method: 'POST' });
+    const r5 = await fetch(`${API_BASE}/api/run/business_plan`, { method: 'POST' });
     const d5 = await r5.json();
     setResults(prev => [...prev.slice(0,4), d5]);
 
@@ -119,7 +121,7 @@ export default function Home() {
   const downloadFile = async (url: string, filename: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/export/${url}`, { method: 'POST' });
+      const res = await fetch(`${API_BASE}/api/export/${url}`, { method: 'POST' });
       if (!res.ok) throw new Error("Export failed");
       const blob = await res.blob();
       const objUrl = window.URL.createObjectURL(blob);
@@ -142,7 +144,7 @@ export default function Home() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await fetch('http://localhost:8000/api/upload', {
+      const res = await fetch(`${API_BASE}/api/upload`, {
         method: 'POST',
         body: formData,
       });

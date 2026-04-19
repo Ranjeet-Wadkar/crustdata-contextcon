@@ -20,7 +20,20 @@ def get_crustdata_headers():
     }
 
 def search_with_crustdata(query: str, sources: List[str] = ["web"], location: str = "US") -> Dict[str, Any]:
-    """Search using Crustdata Web Search API."""
+    """Search using Web Search API (Checks Tavily first if flagged)."""
+    if os.getenv('USE_TAVILY_FOR_WEBSEARCH', '').lower() == 'true':
+        try:
+            from tavily import TavilyClient
+            api_key = os.getenv('TAVILY_API_KEY')
+            if api_key:
+                tc = TavilyClient(api_key=api_key)
+                response = tc.search(query=query, search_depth="basic", max_results=5)
+                results = [{"url": res.get("url"), "content": res.get("content")} for res in response.get("results", [])]
+                if results:
+                    return {"results": results, "query": query}
+        except Exception as e:
+            print(f"Tavily fallback failed: {e}")
+
     url = "https://api.crustdata.com/web/search/live"
     payload = {
         "query": query,
@@ -45,45 +58,27 @@ def search_with_crustdata(query: str, sources: List[str] = ["web"], location: st
 def person_search_crustdata(title: str, domain: str) -> Dict[str, Any]:
     """Search for investors/partners using Crustdata Person Search API."""
     url = "https://api.crustdata.com/person/search"
-    payload = {
-        "filters": [
-            {
-                "filter_type": "CURRENT_TITLE",
-                "type": "in",
-                "value": [title]
-            },
-            {
-                 "filter_type": "CURRENT_COMPANY",
-                 "type": "in",
-                 "value": [domain]
-            }
-        ],
-        "page": 1
-    }
-    
-    # We will try a different approach if specific filtering fails, 
-    # we can use Web APIs to search for LinkedIn profiles instead as an alternative if needed.
-    # We are following the format from person.md: { "field": "dotpath", "type": "op", "value": ... }
     correct_payload = {
-        "filters": [
-            {
-                "field": "experience.employment_details.current.title",
-                "type": "in",
-                "value": ["Partner", "Investor", "VC", "Managing Director"]
-            },
-            {
-                 "field": "basic_profile.headline",
-                 "type": "contains",
-                 "value": domain
-            }
-        ],
-        "page": 1
+        "filters": {
+            "field": "experience.employment_details.current.title",
+            "type": "in",
+            "value": ["Partner", "Investor", "VC", "Managing Director", title.strip()]
+        }
     }
     
     try:
         response = requests.post(url, headers=get_crustdata_headers(), json=correct_payload)
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        
+        # Post-filter for domain since API strictly forces exact matching operators
+        if "profiles" in data and domain:
+             domain_lower = domain.lower()
+             filtered = [p for p in data["profiles"] if domain_lower in str(p.get("basic_profile", {})).lower() or domain_lower in str(p.get("experience", {})).lower()]
+             if filtered:
+                 data["profiles"] = filtered
+                 
+        return data
     except Exception as e:
         print(f"Crustdata Person search failed: {e}")
         # If it fails, fallback to Web API for people
