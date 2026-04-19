@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Body, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import uvicorn
 from contextlib import asynccontextmanager
 
@@ -55,16 +55,6 @@ def add_log(agent: str, log_type: str, content: str):
         "content": content
     })
 
-class MarketInput(BaseModel):
-    topics: List[str] = None
-    product_recommendations: List[Dict[str, Any]] = None
-
-class FeasibilityInput(BaseModel):
-    time: str = None
-    team_size: str = None
-    budget: str = None
-    roadmap: List[str] = None
-
 @app.post("/api/upload")
 async def api_upload(file: UploadFile = File(...)):
     try:
@@ -84,15 +74,15 @@ def api_run_research(input_data: ResearchInput):
     return result
 
 @app.post("/api/run/market")
-def api_run_market(override: MarketInput = None):
+def api_run_market(override: Optional[Dict[str, Any]] = None):
     if "agent_0" not in state.agent_outputs:
         raise HTTPException(status_code=400, detail="Run research agent first.")
         
     # Handle Overrides
-    if override and override.topics is not None:
-        state.agent_outputs["agent_0"]["output"]["topics"] = override.topics
-    if override and override.product_recommendations is not None:
-        state.agent_outputs["agent_0"]["output"]["product_recommendations"] = override.product_recommendations
+    if override and "topics" in override:
+        state.agent_outputs["agent_0"]["output"]["topics"] = override["topics"]
+    if override and "product_recommendations" in override:
+        state.agent_outputs["agent_0"]["output"]["product_recommendations"] = override["product_recommendations"]
         
     research_data = state.agent_outputs["agent_0"]["output"]
     add_log("Market Agent", "call", f"Analyzing market for innovations: {research_data.get('innovations', [])}")
@@ -114,7 +104,7 @@ def api_run_feasibility():
     return result
 
 @app.post("/api/run/stakeholder")
-def api_run_stakeholder(override: FeasibilityInput = None):
+def api_run_stakeholder(override: Optional[Dict[str, Any]] = None):
     if "agent_2" not in state.agent_outputs:
         raise HTTPException(status_code=400, detail="Run feasibility agent first.")
         
@@ -122,14 +112,14 @@ def api_run_stakeholder(override: FeasibilityInput = None):
     if override:
         if "resources" not in state.agent_outputs["agent_2"]["output"]:
             state.agent_outputs["agent_2"]["output"]["resources"] = {}
-        if override.time is not None:
-             state.agent_outputs["agent_2"]["output"]["resources"]["time"] = override.time
-        if override.team_size is not None:
-             state.agent_outputs["agent_2"]["output"]["resources"]["team_size"] = override.team_size
-        if override.budget is not None:
-             state.agent_outputs["agent_2"]["output"]["resources"]["budget"] = override.budget
-        if override.roadmap is not None:
-             state.agent_outputs["agent_2"]["output"]["roadmap"] = override.roadmap
+        if "time" in override:
+             state.agent_outputs["agent_2"]["output"]["resources"]["time"] = override["time"]
+        if "team_size" in override:
+             state.agent_outputs["agent_2"]["output"]["resources"]["team_size"] = override["team_size"]
+        if "budget" in override:
+             state.agent_outputs["agent_2"]["output"]["resources"]["budget"] = override["budget"]
+        if "roadmap" in override:
+             state.agent_outputs["agent_2"]["output"]["roadmap"] = override["roadmap"]
              
     research_data = state.agent_outputs["agent_0"]["output"]
     market_data = state.agent_outputs["agent_1"]["output"]
