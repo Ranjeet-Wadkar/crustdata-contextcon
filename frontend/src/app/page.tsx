@@ -192,6 +192,7 @@ export default function Home() {
   const [logs, setLogs] = useState<any[]>([]);
   const [showLogs, setShowLogs] = useState(false);
   const [activeTab, setActiveTab] = useState('research');
+  const [notebookLoading, setNotebookLoading] = useState(false);
 
   // Human-in-loop states
   const [researchOverride, setResearchOverride] = useState({ topics: '', products: '' });
@@ -299,6 +300,7 @@ export default function Home() {
   };
 
   const downloadFile = async (url: string, filename: string) => {
+    if (url === 'notebooklm') setNotebookLoading(true);
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/export/${url}`, { method: 'POST' });
@@ -313,8 +315,10 @@ export default function Home() {
       a.remove();
     } catch(e) {
       alert("Error generating file!");
+    } finally {
+      setLoading(false);
+      setNotebookLoading(false);
     }
-    setLoading(false);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -381,7 +385,10 @@ export default function Home() {
 
       {activeStep > 0 && activeStep < 6 && (
         <div className="neo-card">
-          <h2 style={{ marginTop: 0 }}>Agent Swarm Progress</h2>
+          <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Agent Swarm Progress</h2>
+          <p style={{ fontSize: '0.85rem', opacity: 0.6, marginBottom: '2rem', fontStyle: 'italic' }}>
+            ⏱️ Total analysis takes approx. 80s with 2 human-in-the-loop validation checkpoints.
+          </p>
           <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column', marginBottom: '2rem' }}>
             {agents.map((agent, index) => (
               <div key={agent} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -396,7 +403,7 @@ export default function Home() {
                 <div style={{ fontWeight: 'bold' }}>{agent} Agent</div>
                 {results[index] && (
                   <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
-                    - {results[index].voice_message?.substring(0, 80)}...
+                    - {results[index].voice_message ? String(results[index].voice_message).substring(0, 80) : 'Processing...'}...
                   </div>
                 )}
               </div>
@@ -437,10 +444,23 @@ export default function Home() {
             <h2 style={{ marginTop: 0 }}>Analysis Complete!</h2>
             <div style={{ display: 'flex', gap: '1rem' }}>
               <NeoButton onClick={() => downloadFile('pdf', 'pitch_deck.html')}>📥 Download HTML Deck</NeoButton>
-              <NeoButton onClick={() => downloadFile('notebooklm', 'notebookLM_premium.pptx')}>🚀 Premium PPTX (NotebookLM)</NeoButton>
+              <NeoButton onClick={() => downloadFile('notebooklm', 'notebookLM_premium.pptx')} disabled={loading}>
+                {notebookLoading ? '⏳ Generating...' : '🚀 Premium PPTX (NotebookLM)'}
+              </NeoButton>
               <NeoButton onClick={() => { setActiveStep(0); setResults([]); setText(''); }}>🔄 New Analysis</NeoButton>
             </div>
           </div>
+          
+          {notebookLoading && (
+            <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(242, 98, 34, 0.1)', border: '2px dashed var(--primary)', borderRadius: '8px' }}>
+              <p style={{ margin: 0, fontWeight: 'bold' }}>
+                🚀 Generating Investor-Grade PPTX via NotebookLM Swarm...
+              </p>
+              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', opacity: 0.8 }}>
+                May return an error incase there is a rate limit hit, since I am using a free trial account. This process involves AI agents logging into NotebookLM and generating formatted slides. This usually takes 3-4 mins. <strong>Please do not refresh the page. </strong>
+              </p>
+            </div>
+          )}
           
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', borderBottom: '2px solid var(--border-color)', paddingBottom: '1rem' }}>
             <button className="neo-input" style={{ width: 'auto', background: activeTab === 'research' ? 'var(--primary)' : 'transparent', fontWeight: 'bold' }} onClick={() => setActiveTab('research')}>🔬 Research</button>
@@ -484,11 +504,16 @@ export default function Home() {
             {activeTab === 'stakeholders' && results[3]?.output && (
               <div>
                 <h3>Recommended Team</h3>
-                <ul>{results[3].output.team_roles?.map((r: string, idx: number) => <li key={idx}>{r}</li>)}</ul>
+                <ul>{results[3].output.team_roles?.map((r: any, idx: number) => <li key={idx}>{String(r)}</li>)}</ul>
                 <h3>Investor Matches</h3>
                 <ol>
-                  {results[3].output.investor_matches?.map((inv: any, idx: number) => (
-                     <li key={idx}><strong>{inv.name}</strong> - Match: {(inv.match_score*100).toFixed(0)}% ({inv.geo}) Focusing on {inv.focus?.join(', ')}</li>
+                  {(results[3].output.investor_matches || []).map((inv: any, idx: number) => (
+                     <li key={idx}>
+                       <strong>{inv?.name || 'Unknown Investor'}</strong> 
+                       {inv?.match_score != null && ` - Match: ${(inv.match_score*100).toFixed(0)}%`}
+                       {inv?.geo && ` (${inv.geo})`}
+                       {inv?.focus && ` Focusing on ${Array.isArray(inv.focus) ? inv.focus.join(', ') : inv.focus}`}
+                     </li>
                   ))}
                 </ol>
               </div>
