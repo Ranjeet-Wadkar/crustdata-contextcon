@@ -485,9 +485,27 @@ export default function Home() {
                 <p><strong>SAM:</strong> {results[1].output.SAM}</p>
                 <p><strong>SOM:</strong> {results[1].output.SOM}</p>
                 <h3>Market Trends</h3>
-                <ul>{results[1].output.trends?.map((t: any, idx: number) => <li key={idx}>{typeof t === 'string' ? t : (t.trend || t.name || JSON.stringify(t))}</li>)}</ul>
+                <ul>{results[1].output.trends?.map((t: any, idx: number) => (
+                  <li key={idx}>
+                    {typeof t === 'string' ? t : (t.trend || t.name || JSON.stringify(t))}
+                    {t.source && (
+                      <a href={t.source} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '10px', fontSize: '0.8rem', color: 'var(--primary)' }}>
+                        [Source]
+                      </a>
+                    )}
+                  </li>
+                ))}</ul>
                 <h3>Competitors</h3>
-                <ul>{results[1].output.competitors?.map((c: any, idx: number) => <li key={idx}>{typeof c === 'string' ? c : (c.competitor || c.name || JSON.stringify(c))}</li>)}</ul>
+                <ul>{results[1].output.competitors?.map((c: any, idx: number) => (
+                  <li key={idx}>
+                    <strong>{typeof c === 'string' ? c : (c.name || 'Unknown')}</strong>: {c.focus || 'Market Player'}
+                    {c.source && (
+                      <a href={c.source} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '10px', fontSize: '0.8rem', color: 'var(--primary)' }}>
+                        [Source]
+                      </a>
+                    )}
+                  </li>
+                ))}</ul>
               </div>
             )}
             {activeTab === 'feasibility' && results[2]?.output && (
@@ -511,8 +529,13 @@ export default function Home() {
                      <li key={idx}>
                        <strong>{inv?.name || 'Unknown Investor'}</strong> 
                        {inv?.match_score != null && ` - Match: ${(inv.match_score*100).toFixed(0)}%`}
-                       {inv?.geo && ` (${inv.geo})`}
+                       {inv?.geo && ` (${String(inv.geo)})`}
                        {inv?.focus && ` Focusing on ${Array.isArray(inv.focus) ? inv.focus.join(', ') : inv.focus}`}
+                       {inv?.linkedin_url && (
+                         <a href={inv.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '10px', fontSize: '0.8rem', color: 'var(--primary)' }}>
+                           [LinkedIn]
+                         </a>
+                       )}
                      </li>
                   ))}
                 </ol>

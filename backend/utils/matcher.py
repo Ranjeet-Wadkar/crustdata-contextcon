@@ -101,7 +101,14 @@ def find_investor_matches(project_attributes: Dict[str, Any], top_n: int = 5) ->
             basic_profile = profile.get("basic_profile", {})
             name = basic_profile.get("name", "Unknown Investor")
             headline = basic_profile.get("headline", "")
-            location = basic_profile.get("location", "Global")
+            # Safely handle location (could be object or string)
+            location_data = basic_profile.get("location", "Global")
+            if isinstance(location_data, dict):
+                location = location_data.get("name") or location_data.get("city") or location_data.get("country") or "Global"
+            else:
+                location = str(location_data)
+
+            linkedin_url = basic_profile.get("linkedin_url") or profile.get("linkedin_url")
             
             # Simple scoring based on relevance in headline or title
             score = 0.5 
@@ -113,6 +120,7 @@ def find_investor_matches(project_attributes: Dict[str, Any], top_n: int = 5) ->
                 "focus": [domain],
                 "stage": "Seed/Series A", # Inferred default
                 "geo": location,
+                "linkedin_url": linkedin_url,
                 "ticket_size": "$500k-$2M",
                 "match_score": min(score, 1.0)
             })
