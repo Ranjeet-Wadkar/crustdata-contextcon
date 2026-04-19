@@ -166,8 +166,8 @@ def api_export_pdf():
         'business_plan_agent': state.agent_outputs["agent_4"]["output"]
     }
     
-    pdf_path = create_pitch_deck(all_outputs)
-    return FileResponse(pdf_path, media_type='application/pdf', filename='pitch_deck.pdf')
+    html_path = create_pitch_deck(all_outputs)
+    return FileResponse(html_path, media_type='text/html', filename='pitch_deck.html')
 
 @app.post("/api/export/notebooklm")
 def api_export_notebooklm():

@@ -251,7 +251,7 @@ export default function Home() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <h2 style={{ marginTop: 0 }}>Analysis Complete!</h2>
             <div style={{ display: 'flex', gap: '1rem' }}>
-              <NeoButton onClick={() => downloadFile('pdf', 'pitch_deck.pdf')}>📥 Download PDF Deck</NeoButton>
+              <NeoButton onClick={() => downloadFile('pdf', 'pitch_deck.html')}>📥 Download HTML Deck</NeoButton>
               <NeoButton onClick={() => downloadFile('notebooklm', 'notebookLM_premium.pptx')}>🚀 Premium PPTX (NotebookLM)</NeoButton>
               <NeoButton onClick={() => { setActiveStep(0); setResults([]); setText(''); }}>🔄 New Analysis</NeoButton>
             </div>

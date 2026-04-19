@@ -35,7 +35,7 @@ def run_cli_command(command_parts, capture_json=True):
             
         return stdout
     except subprocess.CalledProcessError as e:
-        error_msg = f"NotebookLM API Error: {e.stderr}"
+        error_msg = f"NotebookLM API Error: {e.output or e.stderr}"
         print(error_msg)
         raise Exception(error_msg)
 
