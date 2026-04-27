@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 import uvicorn
+import os
 from contextlib import asynccontextmanager
 
 from agents.research_agent import run_research_agent
@@ -144,6 +145,10 @@ def api_run_business_plan():
     add_log("Business Plan Agent", "response", str(result))
     return result
 
+@app.get("/")
+def health_check():
+    return {"status": "healthy", "service": "ContextCon Resa Pipeline"}
+
 @app.get("/api/state")
 def get_state():
     return state.model_dump()
@@ -202,4 +207,5 @@ def reset_state():
     return {"status": "reset"}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
